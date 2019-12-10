@@ -6,7 +6,15 @@ import json
 import praw
 import time
 import sys
-import os.path
+import os.path as path
+import traceback
+
+def check_early_exit():
+    with open("kill.txt", "r") as f:
+        i = f.readline().strip()
+        if i == "True":
+            print("Ending early")
+            sys.exit()
 
 def save_posts(start, end):
     if path.exists(str(int(datetime.timestamp(start))) + "data.json"):
@@ -16,12 +24,25 @@ def save_posts(start, end):
     print(search_query)
 
     cookies = {"__cfduid":"d6d169f3395075c76dea71204165c83c41575582391"}
-    r = requests.get(search_query, cookies=cookies)
-    data = json.loads(r.text)["data"]
-
+    try:
+        for _ in range(10):
+            r = requests.get(search_query, cookies=cookies)
+            if "<html>" in r.text:
+                time.sleep(1)
+            else:
+                break
+        data = json.loads(r.text)["data"]
+    except Exception:
+        file = "errorpushshift" + str(int(datetime.timestamp(start))) + ".txt"
+        with open(file, "w") as f:
+            f.write(r.text)
+            f.write(traceback.format_exc())
+        print("Failed due to pushshift.io error. See " + file + " for more information")
+        return
     posts = []
     c = 0
     for d in data:
+        check_early_exit()
         c += 1
         if c % 50 == 0:
             print("Finished " + str(c) + " posts")
@@ -29,12 +50,17 @@ def save_posts(start, end):
             post = user_agent.submission(d["id"])
             s = post.score
             posts.append([d["title"], d["score"], d["num_comments"], s, post.link_flair_text])
-        except Exception e:
-            with open("error" + str(int(datetime.timestamp(start))) + ".txt", "w") as f:
-                f.write(str(e))
+        except Exception as e:
+            #with open("error" + str(int(datetime.timestamp(start))) + ".txt", "w") as f:
+            #    f.append(repr(e))
+            pass
     print("Got " + str(len(posts)) + " posts")
-    with open(str(int(datetime.timestamp(start))) + "data.json", "w") as f:
-        json.dump(posts, f)
+    try:
+        with open(str(int(datetime.timestamp(start))) + "data.json", "w") as f:
+            json.dump(posts, f)
+    except Exception as e:
+            with open("error_saving" + str(int(datetime.timestamp(start))) + ".txt", "w") as f:
+                f.write(repr(e))
 
 print("starting")
 user_agent = praw.Reddit(client_id='test',

@@ -3,9 +3,11 @@ import subprocess
 
 year = 2019
 month = 2
-day = 0
+day = 1
 for i in range(30):
     day += 1
-    subprocess.Popen("python search.py " + str(year) + " " + str(month)  + " "+ str(day))
+    command = "python search.py " + str(year) + " " + str(month)  + " "+ str(day)
+    print(command)
+    subprocess.Popen(command)
 
 print("Finished spawning processes!")
