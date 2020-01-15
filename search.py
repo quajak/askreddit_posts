@@ -51,10 +51,12 @@ def save_posts(start, end):
             s = post.score
             posts.append([d["title"], d["score"], d["num_comments"], s, post.link_flair_text])
         except Exception as e:
-            #with open("error" + str(int(datetime.timestamp(start))) + ".txt", "w") as f:
-            #    f.append(repr(e))
-            pass
+            with open("error" + str(int(datetime.timestamp(start))) + ".txt", "w") as f:
+                f.write(traceback.format_exc())
     print("Got " + str(len(posts)) + " posts")
+    if len(posts) == 0:
+        print("As we got no posts something went wrong!")
+        sys.exit(0)
     try:
         with open(str(int(datetime.timestamp(start))) + "data.json", "w") as f:
             json.dump(posts, f)
@@ -63,9 +65,9 @@ def save_posts(start, end):
                 f.write(repr(e))
 
 print("starting")
-user_agent = praw.Reddit(client_id='test',
-                     client_secret='test',
-                     user_agent='get askreddit', username="test",password="test")
+user_agent = praw.Reddit(client_id='EL5M1kOlAcy5CA',
+                     client_secret='gIBPzvWEX3KphFMXJ6HTANIlXps',
+                     user_agent='userbot by u/BotTest987', username="BotTest987",password="reddit")
 user_agent.read_only = True
 if len(sys.argv) == 4:
     s_year = int(sys.argv[1])
